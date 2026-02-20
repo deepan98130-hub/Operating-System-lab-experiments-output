@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+
+int main() {
+    pid_t child_pid;
+    int fd;
+
+    printf("Starting Program...\n");
+
+    // Open a file (to demonstrate close system call)
+    fd = open("sample.txt", O_CREAT | O_WRONLY, 0644);
+    if (fd < 0) {
+        perror("File open failed");
+        exit(1);
+    }
+
+    // Create a child process
+    child_pid = fork();
+
+    if (child_pid < 0) {
+        // Fork failed
+        perror("Fork failed");
+        close(fd);
+        exit(1);
+    }
+    else if (child_pid == 0) {
+        // Child Process
+        printf("Child Process:\n");
+        printf("Child PID: %d\n", getpid());
+        printf("Parent PID: %d\n", getppid());
+
+        // Execute new program (ls -l)
+        printf("Executing 'ls -l' command...\n");
+        execl("/bin/ls", "ls", "-l", NULL);
+
+        // If execl fails
+        perror("Exec failed");
+        close(fd);
+        exit(1);
+    }
+    else {
+        // Parent Process
+        printf("Parent Process:\n");
+        printf("Parent PID: %d\n", getpid());
+        printf("Waiting for child to finish...\n");
+
+        wait(NULL);
+
+        printf("Child process finished.\n");
+
+        // Close opened file
+        close(fd);
+
+        printf("File closed successfully.\n");
+        printf("Program Ended.\n");
+
+        exit(0);
+    }
+
+    return 0;
+}
